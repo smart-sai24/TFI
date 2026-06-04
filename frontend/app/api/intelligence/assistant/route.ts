@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      'X-TFI-Role': 'Mentor',
+      ...(!token ? { 'X-TFI-Role': 'Mentor' } : {}),
     },
     body: JSON.stringify(body),
   });

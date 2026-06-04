@@ -164,78 +164,82 @@ async def import_attendance(
     summary = compute_attendance_summary(records)
     quality = compute_attendance_quality(records)
 
-    actor_uid = user.uid if db.get(User, user.uid) else None
-    batch = db.scalar(select(Batch).where(Batch.name == batch_name.strip()))
-    if not batch:
-        batch = Batch(name=batch_name.strip(), domain=domain.strip() or 'General', status='active')
-        db.add(batch)
+    try:
+        actor_uid = user.uid if db.get(User, user.uid) else None
+        batch = db.scalar(select(Batch).where(Batch.name == batch_name.strip()))
+        if not batch:
+            batch = Batch(name=batch_name.strip(), domain=domain.strip() or 'General', status='active')
+            db.add(batch)
+            db.flush()
+
+        attendance_session = AttendanceSession(
+            batch_id=batch.id,
+            title=session_title.strip(),
+            platform=platform.strip() or 'Unknown',
+            session_date=session_date,
+            required_minutes=required_minutes,
+            source_file=filename,
+            import_hash=import_hash,
+            created_by_uid=actor_uid,
+        )
+        db.add(attendance_session)
         db.flush()
 
-    attendance_session = AttendanceSession(
-        batch_id=batch.id,
-        title=session_title.strip(),
-        platform=platform.strip() or 'Unknown',
-        session_date=session_date,
-        required_minutes=required_minutes,
-        source_file=filename,
-        import_hash=import_hash,
-        created_by_uid=actor_uid,
-    )
-    db.add(attendance_session)
-    db.flush()
-
-    for record in records:
-        student = db.scalar(
-            select(Student).where(
-                or_(
-                    Student.email == record['email'],
-                    Student.registration_number == record['registration_number'],
+        for record in records:
+            student = db.scalar(
+                select(Student).where(
+                    or_(
+                        Student.email == record['email'],
+                        Student.registration_number == record['registration_number'],
+                    )
                 )
             )
-        )
-        if not student:
-            student = Student(
-                batch_id=batch.id,
-                registration_number=record['registration_number'],
-                full_name=record['student_name'],
-                email=record['email'],
-                domain=batch.domain,
-                enrollment_status='active',
-                metadata_json={},
+            if not student:
+                student = Student(
+                    batch_id=batch.id,
+                    registration_number=record['registration_number'],
+                    full_name=record['student_name'],
+                    email=record['email'],
+                    domain=batch.domain,
+                    enrollment_status='active',
+                    metadata_json={},
+                )
+                db.add(student)
+                db.flush()
+            else:
+                student.batch_id = batch.id
+                student.full_name = record['student_name'] or student.full_name
+                student.domain = batch.domain
+
+            db.add(
+                AttendanceRecord(
+                    session_id=attendance_session.id,
+                    student_id=student.id,
+                    join_time=to_python_datetime(record.get('join_time')),
+                    leave_time=to_python_datetime(record.get('leave_time')),
+                    duration_minutes=float(record['duration_minutes'] or 0),
+                    attendance_percentage=float(record['attendance_percentage'] or 0),
+                    status=record['attendance_status'],
+                    late_joining=bool(record['late_joining']),
+                    early_leaving=bool(record['early_leaving']),
+                    engagement_score=float(record['engagement_score'] or 0),
+                    raw_payload=record,
+                )
             )
-            db.add(student)
-            db.flush()
-        else:
-            student.batch_id = batch.id
-            student.full_name = record['student_name'] or student.full_name
-            student.domain = batch.domain
 
         db.add(
-            AttendanceRecord(
-                session_id=attendance_session.id,
-                student_id=student.id,
-                join_time=to_python_datetime(record.get('join_time')),
-                leave_time=to_python_datetime(record.get('leave_time')),
-                duration_minutes=float(record['duration_minutes'] or 0),
-                attendance_percentage=float(record['attendance_percentage'] or 0),
-                status=record['attendance_status'],
-                late_joining=bool(record['late_joining']),
-                early_leaving=bool(record['early_leaving']),
-                engagement_score=float(record['engagement_score'] or 0),
-                raw_payload=record,
+            AuditLog(
+                actor_uid=actor_uid,
+                action='attendance.imported',
+                entity_type='attendance_session',
+                entity_id=str(attendance_session.id),
+                metadata_json={'record_count': len(records), 'source_file': filename, 'severity': 'Low'},
             )
         )
-
-    db.add(
-        AuditLog(
-            actor_uid=actor_uid,
-            action='attendance.imported',
-            entity_type='attendance_session',
-            entity_id=str(attendance_session.id),
-            metadata_json={'record_count': len(records), 'source_file': filename, 'severity': 'Low'},
-        )
-    )
-    db.commit()
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
     return {
         'records': records,

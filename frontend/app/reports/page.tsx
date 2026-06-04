@@ -19,6 +19,9 @@ export default function ReportsPage() {
   const router = useRouter();
   const [reports, setReports] = useState<ReportsResponse | null>(null);
   const [error, setError] = useState('');
+  const [selectedReportType, setSelectedReportType] = useState(reportTypes[0]);
+  const [generating, setGenerating] = useState(false);
+  const [generatedReport, setGeneratedReport] = useState('');
 
   useEffect(() => {
     fetch('/api/reports')
@@ -45,6 +48,43 @@ export default function ReportsPage() {
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load reports'));
   }, [router]);
 
+  const handleGenerateReport = async () => {
+    setGenerating(true);
+    setGeneratedReport('');
+    setError('');
+    try {
+      const response = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ report_type: selectedReportType }),
+      });
+      const data = await response.json();
+      if (response.status === 401) {
+        router.push('/login?next=/reports');
+        return;
+      }
+      if (!response.ok) throw new Error(data.detail || 'Unable to generate report');
+      setGeneratedReport(`${data.report_type} report #${data.id} generated`);
+      const refreshed = await fetch('/api/reports');
+      if (refreshed.ok) {
+        const snapshot = await refreshed.json();
+        setReports({
+          certificate_eligible: Number(snapshot.certificate_eligible ?? 0),
+          total_students: Number(snapshot.total_students ?? 0),
+          defaulter_count: Number(snapshot.defaulter_count ?? 0),
+          weekly_attendance: Array.isArray(snapshot.weekly_attendance) ? snapshot.weekly_attendance : [],
+          report_status: String(snapshot.report_status ?? 'Unavailable'),
+          exports: Array.isArray(snapshot.exports) ? snapshot.exports : [],
+          ai_insights: Array.isArray(snapshot.ai_insights) ? snapshot.ai_insights : [],
+        });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to generate report');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const weeklyAttendance = reports?.weekly_attendance ?? [];
   const insights = reports?.ai_insights ?? [];
   const exportTypes = reports?.exports.length ? reports.exports : ['PDF', 'CSV', 'Excel'];
@@ -61,7 +101,13 @@ export default function ReportsPage() {
                 Generate board-ready internship reports with eligibility, risk, attendance, assignment, and mentor performance context.
               </p>
             </div>
-            <button className="h-10 rounded-lg bg-[#B91C1C] px-4 text-sm font-semibold text-white transition hover:bg-red-700">Generate report</button>
+            <button
+              onClick={handleGenerateReport}
+              disabled={generating}
+              className="h-10 rounded-lg bg-[#B91C1C] px-4 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {generating ? 'Generating...' : 'Generate report'}
+            </button>
           </div>
         </section>
 
@@ -71,14 +117,26 @@ export default function ReportsPage() {
           </section>
         )}
 
+        {generatedReport && (
+          <section className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+            {generatedReport}
+          </section>
+        )}
+
         <section className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
           <div className="glass-panel p-5">
             <h2 className="text-sm font-semibold text-white">Report builder</h2>
             <div className="mt-4 space-y-3">
               {reportTypes.map((type) => (
-                <button key={type} className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-[#0B1020] px-4 py-3 text-left text-sm transition hover:border-[#3B82F6]">
+                <button
+                  key={type}
+                  onClick={() => setSelectedReportType(type)}
+                  className={`flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-sm transition ${
+                    selectedReportType === type ? 'border-[#3B82F6] bg-blue-500/10' : 'border-white/10 bg-[#0B1020] hover:border-[#3B82F6]'
+                  }`}
+                >
                   <span className="text-white">{type}</span>
-                  <span className="text-xs text-slate-500">PDF CSV Excel</span>
+                  <span className="text-xs text-slate-500">{selectedReportType === type ? 'Selected' : 'PDF CSV Excel'}</span>
                 </button>
               ))}
             </div>

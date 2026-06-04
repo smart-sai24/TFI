@@ -21,6 +21,7 @@ from app.models.operations import (
     Student,
     Submission,
 )
+from app.services.observability import api_metrics_collector
 
 
 ROLE_CENTERS = {
@@ -481,12 +482,7 @@ def security_events(db: Session) -> list[dict[str, str]]:
 
 
 def api_metrics() -> list[dict[str, str]]:
-    return [
-        {'name': 'API uptime', 'value': 'Measured externally', 'status': 'Configure'},
-        {'name': 'P95 latency', 'value': 'APM required', 'status': 'Configure'},
-        {'name': 'Error rate', 'value': 'APM required', 'status': 'Configure'},
-        {'name': 'Queue depth', 'value': 'Worker required', 'status': 'Configure'},
-    ]
+    return api_metrics_collector.snapshot()
 
 
 def notifications(db: Session) -> list[dict[str, str]]:

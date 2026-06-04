@@ -1,12 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+from time import perf_counter
+
 from starlette.requests import Request
 
 from app.api.v1 import attendance, auth, dashboard, intelligence, reports
 from app.core.config import settings
 from app.db.session import SessionLocal
-from app.services.bootstrap import bootstrap_initial_admin, bootstrap_rbac
+from app.services.bootstrap import bootstrap_initial_admin, bootstrap_local_role_users, bootstrap_rbac
+from app.services.observability import api_metrics_collector
 from app.services.startup import assert_database_ready
 
 app = FastAPI(
@@ -33,7 +36,9 @@ app.add_middleware(
 
 @app.middleware('http')
 async def add_security_headers(request: Request, call_next):
+    started_at = perf_counter()
     response = await call_next(request)
+    api_metrics_collector.record((perf_counter() - started_at) * 1000, response.status_code)
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
@@ -52,6 +57,7 @@ def startup_bootstrap():
         assert_database_ready(session)
         bootstrap_rbac(session)
         bootstrap_initial_admin(session)
+        bootstrap_local_role_users(session)
 
 @app.get('/')
 def root():

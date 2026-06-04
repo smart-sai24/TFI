@@ -6,8 +6,7 @@ interface UserState {
   user: { email: string; role: UserRole } | null;
   hydrated: boolean;
   hydrate: () => void;
-  login: (email: string, password: string, role: UserRole) => Promise<void>;
-  switchRole: (role: UserRole) => void;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -21,11 +20,11 @@ export const useAuthStore = create<UserState>((set) => ({
     const stored = window.localStorage.getItem(storageKey);
     set({ user: stored ? JSON.parse(stored) : null, hydrated: true });
   },
-  login: async (email, password, role) => {
+  login: async (email, password) => {
     const response = await fetch('/api/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, role }),
+      body: JSON.stringify({ email, password }),
     });
 
     if (!response.ok) {
@@ -37,15 +36,6 @@ export const useAuthStore = create<UserState>((set) => ({
     if (typeof window !== 'undefined') window.localStorage.setItem(storageKey, JSON.stringify(user));
     set({ user });
   },
-  switchRole: (role) =>
-    set((state) => ({
-      user: (() => {
-        if (!state.user) return null;
-        const user = { email: state.user.email, role };
-        if (typeof window !== 'undefined') window.localStorage.setItem(storageKey, JSON.stringify(user));
-        return user;
-      })(),
-    })),
   logout: async () => {
     await fetch('/api/auth', { method: 'DELETE' }).catch(() => null);
     if (typeof window !== 'undefined') window.localStorage.removeItem(storageKey);

@@ -2,26 +2,26 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useState } from 'react';
 import { CommandPalette } from './command-palette';
 import { useAuthStore, type UserRole } from '../store/useAuthStore';
 
 const workspaceNav: Record<UserRole, { section: string; items: { href: string; label: string; meta: string }[] }[]> = {
   Director: [
-    { section: 'Executive Center', items: [{ href: '/dashboard', label: 'Internship Health', meta: 'Command view' }, { href: '/reports', label: 'Board Reports', meta: 'Forecasts' }] },
+    { section: 'Executive Center', items: [{ href: '/dashboard', label: 'Internship Health', meta: 'Command view' }, { href: '/ai', label: 'AI Intelligence', meta: 'Predictions' }, { href: '/reports', label: 'Board Reports', meta: 'Forecasts' }] },
     { section: 'Decision Systems', items: [{ href: '/dashboard', label: 'Risk Center', meta: 'Interventions' }, { href: '/reports', label: 'Certificate Forecast', meta: 'Eligibility' }] },
   ],
   Host: [
-    { section: 'Operations', items: [{ href: '/dashboard', label: 'Live Sessions', meta: 'Today' }, { href: '/attendance', label: 'Attendance Center', meta: 'Imports' }] },
+    { section: 'Operations', items: [{ href: '/dashboard', label: 'Live Sessions', meta: 'Today' }, { href: '/attendance', label: 'Attendance Center', meta: 'Imports' }, { href: '/ai', label: 'Attendance AI', meta: 'Risk forecast' }] },
     { section: 'Control Loops', items: [{ href: '/attendance', label: 'Import Center', meta: 'Normalize' }, { href: '/reports', label: 'Alerts', meta: 'Exceptions' }] },
   ],
   Mentor: [
-    { section: 'Student Success', items: [{ href: '/dashboard', label: 'Coaching Queue', meta: 'Priority' }, { href: '/assignments', label: 'Reviews', meta: 'Feedback' }] },
+    { section: 'Student Success', items: [{ href: '/dashboard', label: 'Coaching Queue', meta: 'Priority' }, { href: '/ai', label: 'Mentor AI', meta: 'Assistant' }, { href: '/assignments', label: 'Reviews', meta: 'Feedback' }] },
     { section: 'Insight Workflows', items: [{ href: '/assignments', label: 'At Risk', meta: 'Recovery' }, { href: '/reports', label: 'Progress Reports', meta: 'Cohort' }] },
   ],
   Admin: [
-    { section: 'System Center', items: [{ href: '/dashboard', label: 'Security', meta: 'Events' }, { href: '/reports', label: 'Audit Logs', meta: 'Governance' }] },
+    { section: 'System Center', items: [{ href: '/dashboard', label: 'Security', meta: 'Events' }, { href: '/ai', label: 'AI Module', meta: 'Runtime' }, { href: '/reports', label: 'Audit Logs', meta: 'Governance' }] },
     { section: 'Platform Ops', items: [{ href: '/dashboard', label: 'Permissions', meta: 'RBAC' }, { href: '/attendance', label: 'Data Imports', meta: 'Controls' }] },
   ],
 };
@@ -33,20 +33,34 @@ const roleNames: Record<UserRole, string> = {
   Admin: 'System Control Center',
 };
 
-const roleLabels: UserRole[] = ['Director', 'Host', 'Mentor', 'Admin'];
-
 export function AppShell({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
   const hydrate = useAuthStore((state) => state.hydrate);
   const logout = useAuthStore((state) => state.logout);
-  const switchRole = useAuthStore((state) => state.switchRole);
   const activeRole = user?.role ?? 'Director';
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const isPublicPage = pathname === '/' || pathname === '/login';
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/login');
+    router.refresh();
+  };
+
+  if (isPublicPage) {
+    return <div className="min-h-screen bg-white text-slate-950">{children}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-[#0B1020] text-slate-100">
@@ -64,18 +78,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <div className="border-b border-white/10 px-4 py-4">
             <p className="text-[11px] font-medium uppercase tracking-widest text-slate-500">Workspace</p>
-            <div className="mt-3 grid grid-cols-2 gap-1 rounded-lg border border-white/10 bg-[#0B1020] p-1">
-              {roleLabels.map((role) => (
-                <button
-                  key={role}
-                  onClick={() => switchRole(role)}
-                  className={`h-8 rounded-md text-xs font-medium transition ${activeRole === role ? 'bg-[#3B82F6] text-white' : 'text-slate-400 hover:bg-[#1F2937] hover:text-white'}`}
-                >
-                  {role}
-                </button>
-              ))}
+            <div className="mt-3 rounded-lg border border-white/10 bg-[#0B1020] p-3">
+              <p className="text-sm font-semibold text-white">{activeRole}</p>
+              <p className="mt-1 text-xs text-slate-500">{roleNames[activeRole]}</p>
             </div>
-            <p className="mt-3 text-xs text-slate-500">{roleNames[activeRole]}</p>
           </div>
 
           <nav className="flex-1 overflow-y-auto px-3 py-4">
@@ -110,7 +116,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="rounded-xl border border-white/10 bg-[#0B1020] p-3">
               <p className="text-[11px] font-medium uppercase tracking-widest text-[#B91C1C]">Signed in</p>
               <p className="mt-2 truncate text-sm font-semibold text-white">{user?.email ?? 'director@techofutureindia.com'}</p>
-              <button onClick={() => logout()} className="mt-3 h-8 w-full rounded-lg border border-white/10 text-xs font-medium text-slate-300 transition hover:border-[#B91C1C] hover:text-white">
+              <button onClick={handleLogout} className="mt-3 h-8 w-full rounded-lg border border-white/10 text-xs font-medium text-slate-300 transition hover:border-[#B91C1C] hover:text-white">
                 Sign out
               </button>
             </div>
@@ -122,6 +128,17 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0B1020]/92 backdrop-blur-xl">
           <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
             <div className="flex min-w-0 items-center gap-3">
+              <button
+                onClick={() => setMobileNavOpen(true)}
+                className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 bg-[#111827] transition hover:border-[#B91C1C] lg:hidden"
+                title="Open navigation"
+              >
+                <span className="grid gap-1">
+                  <span className="block h-0.5 w-4 rounded-full bg-slate-300" />
+                  <span className="block h-0.5 w-4 rounded-full bg-slate-300" />
+                  <span className="block h-0.5 w-4 rounded-full bg-slate-300" />
+                </span>
+              </button>
               <Link href="/dashboard" className="flex items-center gap-2 lg:hidden">
                 <span className="relative h-9 w-9 overflow-hidden rounded-lg border border-white/10 bg-white">
                   <Image src="/logo.png" alt="TFI logo" fill sizes="36px" className="object-contain" />
@@ -154,12 +171,80 @@ export function AppShell({ children }: { children: ReactNode }) {
                   ))}
                 </div>
               )}
-              <Link href="/login" className="hidden h-9 rounded-lg bg-[#B91C1C] px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700 sm:block">
-                Access
-              </Link>
+              <button onClick={handleLogout} className="hidden h-9 rounded-lg bg-[#B91C1C] px-3 text-sm font-medium text-white transition hover:bg-red-700 sm:block">
+                Sign out
+              </button>
             </div>
           </div>
         </header>
+        {mobileNavOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <button
+              aria-label="Close navigation"
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => setMobileNavOpen(false)}
+            />
+            <aside className="relative flex h-full w-[min(88vw,22rem)] flex-col border-r border-white/10 bg-[#0F172A] shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
+                <Link href="/dashboard" className="flex min-w-0 items-center gap-3">
+                  <span className="relative h-10 w-10 overflow-hidden rounded-lg border border-white/10 bg-white">
+                    <Image src="/logo.png" alt="Techno Future India logo" fill sizes="40px" className="object-contain" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-white">TFI Command Center</span>
+                    <span className="block text-xs text-slate-500">{activeRole}</span>
+                  </span>
+                </Link>
+                <button
+                  onClick={() => setMobileNavOpen(false)}
+                  className="relative grid h-9 w-9 place-items-center rounded-lg border border-white/10 bg-[#111827] transition hover:border-[#B91C1C]"
+                  title="Close navigation"
+                >
+                  <span className="absolute h-0.5 w-4 rotate-45 rounded-full bg-slate-300" />
+                  <span className="absolute h-0.5 w-4 -rotate-45 rounded-full bg-slate-300" />
+                </button>
+              </div>
+
+              <nav className="flex-1 overflow-y-auto px-3 py-4">
+                {workspaceNav[activeRole].map((group) => (
+                  <div key={group.section} className="mb-5">
+                    <p className="mb-2 px-2 text-[11px] font-medium uppercase tracking-widest text-slate-600">{group.section}</p>
+                    <div className="space-y-1">
+                      {group.items.map((item) => {
+                        const active = pathname === item.href;
+                        return (
+                          <Link
+                            key={`mobile-${group.section}-${item.label}`}
+                            href={item.href}
+                            className={`flex min-h-12 items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
+                              active ? 'bg-[#1F2937] text-white ring-1 ring-white/10' : 'text-slate-400 hover:bg-[#1F2937]/70 hover:text-white'
+                            }`}
+                          >
+                            <span>
+                              <span className="block font-medium">{item.label}</span>
+                              <span className="block text-xs text-slate-600">{item.meta}</span>
+                            </span>
+                            <span className={`h-2 w-2 rounded-full ${active ? 'bg-[#B91C1C]' : 'bg-slate-700'}`} />
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </nav>
+
+              <div className="border-t border-white/10 p-3">
+                <div className="rounded-xl border border-white/10 bg-[#0B1020] p-3">
+                  <p className="truncate text-sm font-semibold text-white">{user?.email ?? 'Signed in'}</p>
+                  <p className="mt-1 text-xs text-slate-500">{roleNames[activeRole]}</p>
+                  <button onClick={handleLogout} className="mt-3 h-9 w-full rounded-lg bg-[#B91C1C] text-sm font-medium text-white transition hover:bg-red-700">
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            </aside>
+          </div>
+        )}
         {children}
       </div>
     </div>

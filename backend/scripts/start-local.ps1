@@ -2,6 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path "$PSScriptRoot\..\.."
 $backendRoot = Resolve-Path "$PSScriptRoot\.."
+$port = if ($env:PORT) { $env:PORT } else { "8010" }
 
 Set-Location $repoRoot
 
@@ -16,5 +17,5 @@ Set-Location $backendRoot
 Write-Host "Running database migrations..."
 alembic upgrade head
 
-Write-Host "Starting FastAPI on http://localhost:8000 ..."
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+Write-Host "Starting FastAPI on http://localhost:$port ..."
+uvicorn app.main:app --reload --host 0.0.0.0 --port $port

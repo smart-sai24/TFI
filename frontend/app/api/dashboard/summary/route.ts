@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     cache: 'no-store',
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      'X-TFI-Role': role,
+      ...(!token ? { 'X-TFI-Role': role } : {}),
     },
   });
   const data = await response.json();

@@ -15,6 +15,15 @@ ROLE_DESCRIPTIONS = {
     'Admin': 'Platform administration access to security, RBAC, and audit workflows.',
 }
 
+LOCAL_ROLE_USERS = [
+    ('Director', 'director@techofutureindia.com', 'TFI Director'),
+    ('Host', 'host@techofutureindia.com', 'TFI Host'),
+    ('Mentor', 'mentor@techofutureindia.com', 'TFI Mentor'),
+    ('Admin', 'admin-demo@techofutureindia.com', 'TFI Demo Admin'),
+]
+
+LOCAL_ROLE_PASSWORD = 'TfiDemo@2026!'
+
 
 def bootstrap_rbac(db: Session) -> None:
     for role_name, description in ROLE_DESCRIPTIONS.items():
@@ -67,6 +76,34 @@ def bootstrap_initial_admin(db: Session) -> None:
                 name=settings.initial_admin_name,
                 role=role,
                 password_hash=hash_password(settings.initial_admin_password),
+                is_active=True,
+            )
+        )
+    db.commit()
+
+
+def bootstrap_local_role_users(db: Session) -> None:
+    if settings.environment.strip().lower() != 'local':
+        return
+
+    password_hash = hash_password(LOCAL_ROLE_PASSWORD)
+    for role, email, name in LOCAL_ROLE_USERS:
+        normalized_email = email.lower()
+        user = db.scalar(select(User).where(User.email == normalized_email))
+        if user:
+            user.role = role
+            user.name = user.name or name
+            user.password_hash = user.password_hash or password_hash
+            user.is_active = True
+            continue
+
+        db.add(
+            User(
+                uid=f'local-demo:{role.lower()}',
+                email=normalized_email,
+                name=name,
+                role=role,
+                password_hash=password_hash,
                 is_active=True,
             )
         )

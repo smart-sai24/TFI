@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     method: 'POST',
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      'X-TFI-Role': 'Host',
+      ...(!token ? { 'X-TFI-Role': 'Host' } : {}),
     },
     body: await request.formData(),
   });

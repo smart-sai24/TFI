@@ -1,75 +1,9 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuthStore, type UserRole } from '../../store/useAuthStore';
-
-type TrendPoint = { name: string; value: number };
-type Insight = { title: string; body: string; severity: string };
-type Activity = { action: string; actor: string; timestamp: string };
-
-type StudentRow = {
-  name: string;
-  registration_number: string;
-  batch: string;
-  domain: string;
-  attendance_rate: number;
-  assignment_completion: number;
-  engagement_score: number;
-  overall_score: number;
-  category: string;
-  risk_level: string;
-  certificate_status: string;
-  trend: string;
-  missing_assignments: number;
-  late_submissions: number;
-};
-
-type BatchPerformance = {
-  name: string;
-  domain: string;
-  students: number;
-  mentor: string;
-  attendance_rate: number;
-  assignment_completion: number;
-  engagement_score: number;
-  health_score: number;
-};
-
-type DashboardSummary = {
-  role_center: { name: string; question: string; primary_action: string };
-  total_interns: number;
-  total_batches: number;
-  active_sessions: number;
-  attendance_rate: number;
-  assignment_completion: number;
-  engagement_score: number;
-  certificate_eligible: number;
-  at_risk_students: number;
-  high_risk_students: number;
-  medium_risk_students: number;
-  internship_health_score: number;
-  weekly_growth: number;
-  attendance_trend: TrendPoint[];
-  completion_trend: TrendPoint[];
-  engagement_trend: TrendPoint[];
-  batch_performance: BatchPerformance[];
-  risk_students: StudentRow[];
-  top_performers: StudentRow[];
-  ai_insights: Insight[];
-  activity_feed: Activity[];
-  session_timeline: { title: string; batch: string; host: string; status: string; attendance_rate: number; late_joiners: number; early_leavers: number; started_at: string }[];
-  late_joiners: { name: string; batch: string; delay_minutes: number; session: string }[];
-  early_leavers: { name: string; batch: string; left_minutes_early: number; session: string }[];
-  attendance_alerts: { title: string; body: string; severity: string }[];
-  assignment_reviews: { title: string; batch: string; pending_reviews: number; late_submissions: number }[];
-  coaching_queue: StudentRow[];
-  coaching_insights: { title: string; body: string }[];
-  certificate_forecast: { status: string; count: number; color: string }[];
-  risk_heatmap: { batch: string; high: number; medium: number; low: number }[];
-  security_events: { event: string; severity: string; service: string; timestamp: string }[];
-  api_metrics: { name: string; value: string; status: string }[];
-  notifications: { title: string; channel: string; time: string }[];
-};
+import type { DashboardSummary, StudentRow } from '../../types/dashboard';
 
 function toneClass(tone: string) {
   if (['High', 'critical', 'Danger', 'Medium'].includes(tone)) return 'border-red-500/20 bg-red-500/10 text-red-200';
@@ -138,8 +72,8 @@ function ProgressRow({ label, value, tone = '#3B82F6' }: { label: string; value:
 function SignalList({ items }: { items: { title: string; body: string; tone?: string }[] }) {
   return (
     <div className="space-y-3">
-      {items.map((item) => (
-        <article key={item.title} className="rounded-lg border border-white/10 bg-[#0B1020] p-4">
+      {items.map((item, index) => (
+        <article key={`${item.title}-${item.body}-${index}`} className="rounded-lg border border-white/10 bg-[#0B1020] p-4">
           <div className="flex items-start justify-between gap-3">
             <p className="text-sm font-medium text-white">{item.title}</p>
             {item.tone && <Badge tone={item.tone}>{item.tone}</Badge>}
@@ -155,6 +89,8 @@ function EnterpriseStudentTable({ rows }: { rows: StudentRow[] }) {
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<keyof StudentRow>('overall_score');
   const [descending, setDescending] = useState(true);
+  const [page, setPage] = useState(1);
+  const pageSize = 8;
 
   const filteredRows = useMemo(() => {
     const normalized = query.toLowerCase().trim();
@@ -166,6 +102,40 @@ function EnterpriseStudentTable({ rows }: { rows: StudentRow[] }) {
       return descending ? String(bValue).localeCompare(String(aValue)) : String(aValue).localeCompare(String(bValue));
     });
   }, [descending, query, rows, sortKey]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, rows, sortKey, descending]);
+
+  const totalPages = Math.max(Math.ceil(filteredRows.length / pageSize), 1);
+  const currentPage = Math.min(page, totalPages);
+  const pageRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const handleExport = () => {
+    const headers = ['Student', 'Registration', 'Batch', 'Domain', 'Attendance', 'Assignments', 'Score', 'Risk', 'Certificate'];
+    const csvRows = filteredRows.map((row) =>
+      [
+        row.name,
+        row.registration_number,
+        row.batch,
+        row.domain,
+        row.attendance_rate,
+        row.assignment_completion,
+        row.overall_score,
+        row.risk_level,
+        row.certificate_status,
+      ]
+        .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+        .join(','),
+    );
+    const blob = new Blob([[headers.join(','), ...csvRows].join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'tfi-student-signal-view.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   const columns: { key: keyof StudentRow; label: string }[] = [
     { key: 'name', label: 'Student' },
@@ -185,7 +155,7 @@ function EnterpriseStudentTable({ rows }: { rows: StudentRow[] }) {
           placeholder="Search students, batches, risk..."
           className="h-10 w-full rounded-lg border border-white/10 bg-[#0B1020] px-3 text-sm text-white outline-none focus:border-[#3B82F6] sm:max-w-sm"
         />
-        <button className="h-10 rounded-lg border border-white/10 px-3 text-sm font-medium text-slate-300 transition hover:border-[#3B82F6] hover:text-white">Export view</button>
+        <button onClick={handleExport} className="h-10 rounded-lg border border-white/10 px-3 text-sm font-medium text-slate-300 transition hover:border-[#3B82F6] hover:text-white">Export view</button>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full text-left text-sm">
@@ -207,7 +177,7 @@ function EnterpriseStudentTable({ rows }: { rows: StudentRow[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/10">
-            {filteredRows.slice(0, 8).map((row) => (
+            {pageRows.map((row) => (
               <tr key={row.registration_number} className="bg-[#111827] transition hover:bg-[#162033]">
                 <td className="px-4 py-3">
                   <p className="font-medium text-white">{row.name}</p>
@@ -222,6 +192,30 @@ function EnterpriseStudentTable({ rows }: { rows: StudentRow[] }) {
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="mt-4 flex flex-col gap-3 border-t border-white/10 pt-4 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+        <p>
+          Showing {filteredRows.length ? (currentPage - 1) * pageSize + 1 : 0}-{Math.min(currentPage * pageSize, filteredRows.length)} of {filteredRows.length}
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setPage((value) => Math.max(value - 1, 1))}
+            disabled={currentPage === 1}
+            className="h-9 rounded-lg border border-white/10 px-3 font-medium text-slate-300 transition hover:border-[#3B82F6] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Prev
+          </button>
+          <span className="grid h-9 min-w-16 place-items-center rounded-lg border border-white/10 bg-[#0B1020] px-3 text-xs font-semibold text-white">
+            {currentPage} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage((value) => Math.min(value + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="h-9 rounded-lg border border-white/10 px-3 font-medium text-slate-300 transition hover:border-[#3B82F6] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -395,6 +389,7 @@ function AdminWorkspace({ summary }: { summary: DashboardSummary }) {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [error, setError] = useState('');
   const user = useAuthStore((state) => state.user);
@@ -404,12 +399,18 @@ export default function DashboardPage() {
     setSummary(null);
     fetch(`/api/dashboard?role=${encodeURIComponent(activeRole)}`)
       .then((res) => {
+        if (res.status === 401) {
+          router.replace('/login?next=/dashboard');
+          return null;
+        }
         if (!res.ok) throw new Error('Unable to load dashboard');
         return res.json();
       })
-      .then(setSummary)
+      .then((data) => {
+        if (data) setSummary(data);
+      })
       .catch(() => setError('Command Center intelligence is temporarily unavailable.'));
-  }, [activeRole]);
+  }, [activeRole, router]);
 
   if (error) {
     return (

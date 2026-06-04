@@ -26,14 +26,21 @@ def get_current_user(
         payload = decode_access_token(credentials.credentials)
         if not payload:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid or expired token')
+        try:
+            role = normalize_role(str(payload.get('role') or ''))
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid role')
         return CurrentUser(
             uid=str(payload.get('sub', '')),
             email=str(payload.get('email', '')),
-            role=normalize_role(str(payload.get('role', 'Director'))),
+            role=role,
         )
 
     if settings.demo_mode:
-        role = normalize_role(x_tfi_role or 'Director')
+        try:
+            role = normalize_role(x_tfi_role or 'Director')
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid demo role')
         return CurrentUser(uid='demo-user', email='demo@techofutureindia.com', role=role)
 
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Authentication required')
