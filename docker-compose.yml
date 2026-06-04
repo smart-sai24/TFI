@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: tfi_admin
+      POSTGRES_PASSWORD: supersecure
+      POSTGRES_DB: tfi_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+    ports:
+      - '8000:8000'
+    environment:
+      DATABASE_URL: postgresql://tfi_admin:supersecure@postgres:5432/tfi_db
+      SECRET_KEY: local-development-secret-change-before-production
+      DEMO_MODE: 'true'
+      FIREBASE_PROJECT_ID: your-firebase-project
+      CLOUDINARY_URL: your-cloudinary-url
+      RESEND_API_KEY: your-resend-key
+      WHATSAPP_API_TOKEN: your-whatsapp-token
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - '3000:3000'
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://backend:8000/api/v1
+    command: sh -lc "yarn install && yarn dev --hostname 0.0.0.0"
+
+volumes:
+  postgres-data:
