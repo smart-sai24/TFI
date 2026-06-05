@@ -84,6 +84,10 @@ class Student(Base):
     performance_scores = relationship('PerformanceScore', back_populates='student')
     risk_profile = relationship('RiskProfile', back_populates='student', uselist=False)
     certificates = relationship('Certificate', back_populates='student')
+    attendance_predictions = relationship('AttendancePrediction', back_populates='student')
+    performance_predictions = relationship('PerformancePrediction', back_populates='student')
+    risk_predictions = relationship('RiskPrediction', back_populates='student')
+    assignment_evaluations = relationship('AssignmentEvaluation', back_populates='student')
 
 
 class AttendanceSession(Base):
@@ -163,6 +167,7 @@ class Submission(Base):
 
     assignment = relationship('Assignment', back_populates='submissions')
     student = relationship('Student', back_populates='submissions')
+    assignment_evaluations = relationship('AssignmentEvaluation', back_populates='submission')
 
     __table_args__ = (UniqueConstraint('assignment_id', 'student_id', name='uq_submission_assignment_student'),)
 
@@ -254,3 +259,113 @@ class Report(Base):
     parameters = Column(JSON, nullable=False, default=dict)
     metrics_snapshot = Column(JSON, nullable=False, default=dict)
     generated_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class AttendancePrediction(Base):
+    __tablename__ = 'attendance_predictions'
+
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey('students.id', ondelete='CASCADE'), nullable=False, index=True)
+    prediction_window = Column(String, nullable=False, default='30_days')
+    current_attendance = Column(Float, nullable=False)
+    risk_score = Column(Float, nullable=False)
+    risk_level = Column(String, nullable=False, index=True)
+    confidence = Column(Float, nullable=False)
+    forecast = Column(JSON, nullable=False, default=dict)
+    reasons = Column(JSON, nullable=False, default=list)
+    recommended_action = Column(Text, nullable=True)
+    model_version = Column(String, nullable=False, default='heuristic-v1')
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+
+    student = relationship('Student', back_populates='attendance_predictions')
+
+
+class PerformancePrediction(Base):
+    __tablename__ = 'performance_predictions'
+
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey('students.id', ondelete='CASCADE'), nullable=False, index=True)
+    current_score = Column(Float, nullable=False)
+    predicted_final_score = Column(Float, nullable=False)
+    predicted_category = Column(String, nullable=False, index=True)
+    certificate_probability = Column(Float, nullable=False)
+    confidence = Column(Float, nullable=False)
+    drivers = Column(JSON, nullable=False, default=list)
+    model_version = Column(String, nullable=False, default='heuristic-v1')
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+
+    student = relationship('Student', back_populates='performance_predictions')
+
+
+class RiskPrediction(Base):
+    __tablename__ = 'risk_predictions'
+
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey('students.id', ondelete='CASCADE'), nullable=False, index=True)
+    risk_level = Column(String, nullable=False, index=True)
+    risk_score = Column(Float, nullable=False)
+    risk_types = Column(JSON, nullable=False, default=list)
+    reasoning = Column(JSON, nullable=False, default=list)
+    recommendations = Column(JSON, nullable=False, default=list)
+    model_version = Column(String, nullable=False, default='heuristic-v1')
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+
+    student = relationship('Student', back_populates='risk_predictions')
+
+
+class AiReport(Base):
+    __tablename__ = 'ai_reports'
+
+    id = Column(Integer, primary_key=True)
+    report_type = Column(String, nullable=False, index=True)
+    output_format = Column(String, nullable=False, default='markdown')
+    status = Column(String, nullable=False, default='completed', index=True)
+    generated_by_uid = Column(String, ForeignKey('users.uid'), nullable=True)
+    file_url = Column(String, nullable=True)
+    content = Column(Text, nullable=False)
+    payload = Column(JSON, nullable=False, default=dict)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+
+
+class AiInsight(Base):
+    __tablename__ = 'ai_insights'
+
+    id = Column(Integer, primary_key=True)
+    audience_role = Column(String, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    body = Column(Text, nullable=False)
+    severity = Column(String, nullable=False, default='neutral', index=True)
+    source = Column(String, nullable=False, default='insights_engine')
+    payload = Column(JSON, nullable=False, default=dict)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+
+
+class AiConversation(Base):
+    __tablename__ = 'ai_conversations'
+
+    id = Column(Integer, primary_key=True)
+    user_uid = Column(String, ForeignKey('users.uid'), nullable=True, index=True)
+    query = Column(Text, nullable=False)
+    response = Column(JSON, nullable=False, default=dict)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+
+
+class AssignmentEvaluation(Base):
+    __tablename__ = 'assignment_evaluations'
+
+    id = Column(Integer, primary_key=True)
+    submission_id = Column(Integer, ForeignKey('submissions.id', ondelete='SET NULL'), nullable=True, index=True)
+    student_id = Column(Integer, ForeignKey('students.id', ondelete='CASCADE'), nullable=True, index=True)
+    title = Column(String, nullable=False)
+    score = Column(Float, nullable=False)
+    max_score = Column(Float, nullable=False)
+    grade = Column(String, nullable=False, index=True)
+    feedback = Column(Text, nullable=False)
+    strengths = Column(JSON, nullable=False, default=list)
+    improvements = Column(JSON, nullable=False, default=list)
+    risk_flags = Column(JSON, nullable=False, default=list)
+    model_version = Column(String, nullable=False, default='heuristic-v1')
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+
+    submission = relationship('Submission', back_populates='assignment_evaluations')
+    student = relationship('Student', back_populates='assignment_evaluations')

@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     resend_from_email: str = ''
     whatsapp_api_token: str = ''
     whatsapp_phone_number_id: str = ''
+    ai_live_enabled: bool = False
+    ai_provider: str = 'local'
+    openai_api_key: str = ''
+    openai_model: str = 'gpt-5.5'
+    gemini_api_key: str = ''
+    gemini_model: str = 'gemini-1.5-pro'
+    ai_request_timeout_seconds: int = 20
+    ai_storage_dir: str = 'storage'
     # Keep `frontend_origins` as a simple comma-separated string to avoid
     # dotenv/JSON parsing errors. We'll normalize to a list in the app startup.
     frontend_origins: str = 'http://localhost:3000'

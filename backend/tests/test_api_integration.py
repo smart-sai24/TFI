@@ -1,5 +1,7 @@
 import unittest
+import tempfile
 from datetime import date
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -12,7 +14,7 @@ from app.core import config
 from app.core.security import hash_password
 from app.db.base import Base
 from app.db.session import get_db
-from app.models.operations import Role
+from app.models.operations import AiConversation, AiReport, AssignmentEvaluation, Role
 from app.models.user import User
 from app.services.rate_limit import login_rate_limiter
 
@@ -41,6 +43,9 @@ class ApiIntegrationTests(unittest.TestCase):
         self.app.dependency_overrides[get_db] = override_get_db
         self.client = TestClient(self.app)
         login_rate_limiter._buckets.clear()
+        self.storage_dir = tempfile.TemporaryDirectory()
+        self.original_ai_storage_dir = config.settings.ai_storage_dir
+        config.settings.ai_storage_dir = self.storage_dir.name
 
         with self.Session() as session:
             for role in ['Director', 'Host', 'Mentor', 'Admin']:
@@ -76,6 +81,10 @@ class ApiIntegrationTests(unittest.TestCase):
                 )
             )
             session.commit()
+
+    def tearDown(self):
+        config.settings.ai_storage_dir = self.original_ai_storage_dir
+        self.storage_dir.cleanup()
 
     def login(self, email: str) -> str:
         response = self.client.post('/api/v1/auth/login', json={'email': email, 'password': 'Secret123!'})
@@ -147,6 +156,17 @@ class ApiIntegrationTests(unittest.TestCase):
         insights = self.client.get('/api/v1/intelligence/insights', headers=headers)
         assistant = self.client.post('/api/v1/intelligence/assistant', json={'query': 'top performers'}, headers=headers)
         ai_overview = self.client.get('/api/v1/intelligence/ai/overview', headers=headers)
+        attendance_prediction = self.client.get('/api/v1/intelligence/ai/attendance-prediction', headers=headers)
+        performance_forecast = self.client.get('/api/v1/intelligence/ai/performance-forecast', headers=headers)
+        risk_analysis = self.client.get('/api/v1/intelligence/ai/risk-analysis', headers=headers)
+        model_status = self.client.get('/api/v1/intelligence/ai/model-status', headers=headers)
+        model_retraining = self.client.post('/api/v1/intelligence/ai/model-retraining', headers=headers)
+        mentor_chat = self.client.post('/api/v1/intelligence/ai/mentor-chat', json={'query': 'students at risk'}, headers=headers)
+        ai_report = self.client.post(
+            '/api/v1/intelligence/ai/report-generation',
+            json={'report_type': 'Weekly executive', 'output_format': 'pdf'},
+            headers=headers,
+        )
         assignment_eval = self.client.post(
             '/api/v1/intelligence/ai/assignment-evaluation',
             json={
@@ -161,13 +181,34 @@ class ApiIntegrationTests(unittest.TestCase):
         self.assertEqual(insights.status_code, 200, insights.text)
         self.assertEqual(assistant.status_code, 200, assistant.text)
         self.assertEqual(ai_overview.status_code, 200, ai_overview.text)
+        self.assertEqual(attendance_prediction.status_code, 200, attendance_prediction.text)
+        self.assertEqual(performance_forecast.status_code, 200, performance_forecast.text)
+        self.assertEqual(risk_analysis.status_code, 200, risk_analysis.text)
+        self.assertEqual(model_status.status_code, 200, model_status.text)
+        self.assertEqual(model_retraining.status_code, 200, model_retraining.text)
+        self.assertEqual(mentor_chat.status_code, 200, mentor_chat.text)
+        self.assertEqual(ai_report.status_code, 200, ai_report.text)
         self.assertEqual(assignment_eval.status_code, 200, assignment_eval.text)
         self.assertIsInstance(students.json(), list)
         self.assertIn('has_more', student_page.json())
         self.assertIn('insights', insights.json())
         self.assertIn('summary', assistant.json())
         self.assertIn('executive_report', ai_overview.json())
+        self.assertIn('model_status', ai_overview.json())
+        self.assertIn('provider_status', ai_overview.json())
+        self.assertIsInstance(attendance_prediction.json(), list)
+        self.assertIsInstance(performance_forecast.json(), list)
+        self.assertIsInstance(risk_analysis.json(), list)
+        self.assertIn('artifacts', model_status.json())
+        self.assertIn(model_retraining.json()['status'], {'completed', 'insufficient_data'})
+        self.assertIn('summary', mentor_chat.json())
+        self.assertEqual(ai_report.json()['status'], 'completed')
+        self.assertTrue(Path(ai_report.json()['file_url']).exists())
         self.assertIn('score', assignment_eval.json())
+        with self.Session() as session:
+            self.assertEqual(session.query(AiConversation).count(), 2)
+            self.assertEqual(session.query(AiReport).count(), 1)
+            self.assertEqual(session.query(AssignmentEvaluation).count(), 1)
 
     def test_login_rate_limit_blocks_repeated_failures(self):
         original_limit = config.settings.login_rate_limit_attempts
