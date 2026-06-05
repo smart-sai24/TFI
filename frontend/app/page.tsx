@@ -35,7 +35,7 @@ export default function Home() {
     <main className="min-h-screen bg-[#F6F8FB] text-slate-950">
       <section className="relative min-h-[820px] overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 scale-105 bg-cover bg-center "
           style={{ backgroundImage: `url(${heroImage})` }}
         />
         <div className="absolute inset-0 bg-[#070A0F]/46" />
@@ -54,7 +54,7 @@ export default function Home() {
                   Techno Future India
                 </span>
                 <span className="block text-[10px] font-bold uppercase tracking-[0.28em] text-[#B91C1C]">
-                  Command Center 2.0
+                  Command Center 
                 </span>
               </span>
             </Link>

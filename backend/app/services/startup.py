@@ -20,6 +20,14 @@ REQUIRED_TABLES = {
     'notifications',
     'audit_logs',
     'reports',
+    'attendance_predictions',
+    'performance_predictions',
+    'risk_predictions',
+    'ai_reports',
+    'ai_insights',
+    'ai_conversations',
+    'assignment_evaluations',
+    'assignment_authenticity_checks',
 }
 
 

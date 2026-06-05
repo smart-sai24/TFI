@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from app.db.base import Base
 from app.models.operations import Assignment, AttendanceRecord, AttendanceSession, Batch, Submission
 from app.models.operations import Student
+from app.ai.authenticity import run_authenticity_check
 from app.services.ai_intelligence import (
     ai_module_overview,
     attendance_drop_predictions,
@@ -102,6 +103,25 @@ class AiIntelligenceTests(unittest.TestCase):
         self.assertGreaterEqual(result['score'], 80)
         self.assertIn(result['grade'], {'A', 'B'})
         self.assertIn('strengths', result)
+
+    def test_authenticity_check_flags_similar_submission_and_scores_originality(self):
+        original = (
+            'I built a FastAPI route with validation, database persistence, pytest coverage, '
+            'error handling, and a React component that shows the result. '
+        ) * 4
+        copy = (
+            'I built a FastAPI route with validation, database persistence, pytest coverage, '
+            'error handling, and a React component that shows the result. '
+        ) * 4
+
+        with self.Session() as session:
+            first = run_authenticity_check(session, 'API Project', original, assignment_id=1, student_id=1)
+            second = run_authenticity_check(session, 'API Project', copy, assignment_id=1, student_id=2)
+
+        self.assertGreaterEqual(first['originality_score'], 70)
+        self.assertGreaterEqual(second['similarity_score'], 90)
+        self.assertIn(second['risk_level'], {'High', 'Critical'})
+        self.assertIn('recommendations', second)
 
 
 if __name__ == '__main__':

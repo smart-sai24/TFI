@@ -5,13 +5,13 @@ function authHeaders(request: NextRequest) {
   const token = request.cookies.get('tfi_token')?.value;
   return {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(!token ? { 'X-TFI-Role': 'Mentor' } : {}),
+    ...(!token ? { 'X-TFI-Role': 'Admin' } : {}),
   };
 }
 
 export async function GET(request: NextRequest) {
   const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
-  const response = await fetch(`${backendUrl}/intelligence/ai/overview`, {
+  const response = await fetch(`${backendUrl}/notifications`, {
     cache: 'no-store',
     headers: authHeaders(request),
   });
@@ -22,25 +22,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
   const body = await request.json();
-  const mode = body.mode;
-  const endpoint = mode === 'evaluate'
-    ? 'ai/assignment-evaluation'
-    : mode === 'authenticity'
-      ? 'ai/authenticity-check'
-    : mode === 'report'
-      ? 'ai/report-generation'
-      : mode === 'retrain'
-        ? 'ai/model-retraining'
-        : 'assistant';
-  const payload = mode === 'evaluate'
-    ? { title: body.title, submission_text: body.submission_text, max_score: body.max_score ?? 100 }
-    : mode === 'authenticity'
-      ? { title: body.title, submission_text: body.submission_text, github_url: body.github_url ?? null }
-    : mode === 'report'
-      ? { report_type: body.report_type ?? 'Weekly executive', output_format: body.output_format ?? 'pdf' }
-      : { query: body.query };
+  const isResponseUpdate = body.mode === 'response' && body.notification_id;
+  const endpoint = isResponseUpdate ? `notifications/${body.notification_id}/response` : 'notifications/nudges/run';
+  const payload = isResponseUpdate
+    ? { response_status: body.response_status, notes: body.notes }
+    : { auto_send: body.auto_send ?? false, attendance_session_id: body.attendance_session_id ?? null };
 
-  const response = await fetch(`${backendUrl}/intelligence/${endpoint}`, {
+  const response = await fetch(`${backendUrl}/${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

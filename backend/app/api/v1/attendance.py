@@ -15,6 +15,7 @@ from app.db.session import get_db
 from app.models.user import User
 from app.models.operations import AttendanceRecord, AttendanceSession, AuditLog, Batch, Student
 from app.services.analytics import compute_attendance_quality, compute_attendance_summary
+from app.services.nudges import run_auto_nudges
 
 router = APIRouter()
 
@@ -237,6 +238,7 @@ async def import_attendance(
             )
         )
         db.commit()
+        run_auto_nudges(db, actor_uid=actor_uid, attendance_session_id=attendance_session.id)
     except Exception:
         db.rollback()
         raise

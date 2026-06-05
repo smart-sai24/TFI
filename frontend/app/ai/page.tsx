@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 type Prediction = {
@@ -37,6 +37,16 @@ type AiOverview = {
   attendance_predictions: Prediction[];
   performance_forecasts: Forecast[];
   executive_report: ExecutiveReport;
+  model_status?: {
+    model_version: string;
+    training_rows_available: number;
+    can_retrain: boolean;
+    artifacts: Record<string, { exists: boolean; path: string }>;
+  };
+  provider_status?: {
+    provider: string;
+    live_enabled: boolean;
+  };
   example_prompts: string[];
 };
 
@@ -58,8 +68,52 @@ type EvaluationResult = {
   feedback: string;
 };
 
+type AuthenticityResult = {
+  originality_score: number;
+  similarity_score: number;
+  ai_generated_risk: number;
+  code_quality_score: number;
+  github_activity_score: number;
+  risk_level: string;
+  findings: string[];
+  recommendations: string[];
+  github_evidence: { status: string; signals: string[] };
+};
+
+type ReportResult = {
+  status: string;
+  output_format: string;
+  file_url: string;
+};
+
+type RetrainResult = {
+  status: string;
+  training_rows?: number;
+  source_students?: number;
+  artifacts?: Record<string, { path: string; metrics: Record<string, number | boolean> }>;
+  message?: string;
+};
+
+type NotificationItem = {
+  id: number;
+  recipient_type: string;
+  recipient_id: string;
+  channel: string;
+  status: string;
+  response_status: string;
+  payload: { event_type?: string; student_name?: string; message?: string; severity?: string };
+};
+
+type NudgeResult = {
+  status: string;
+  detected_events: number;
+  created_notifications: number;
+  skipped_duplicates: number;
+  auto_send: boolean;
+};
+
 function toneClass(tone: string) {
-  if (['High', 'Needs Revision'].includes(tone)) return 'border-red-500/20 bg-red-500/10 text-red-200';
+  if (['Critical', 'High', 'Needs Revision'].includes(tone)) return 'border-red-500/20 bg-red-500/10 text-red-200';
   if (['Medium', 'D'].includes(tone)) return 'border-amber-500/20 bg-amber-500/10 text-amber-200';
   return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-200';
 }
@@ -88,9 +142,29 @@ export default function AiPage() {
   const [assistant, setAssistant] = useState<AssistantResult | null>(null);
   const [title, setTitle] = useState('React Dashboard Sprint');
   const [submissionText, setSubmissionText] = useState('');
+  const [githubUrl, setGithubUrl] = useState('');
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
+  const [authenticity, setAuthenticity] = useState<AuthenticityResult | null>(null);
+  const [report, setReport] = useState<ReportResult | null>(null);
+  const [retrainResult, setRetrainResult] = useState<RetrainResult | null>(null);
+  const [nudgeResult, setNudgeResult] = useState<NudgeResult | null>(null);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loadingAssistant, setLoadingAssistant] = useState(false);
   const [loadingEvaluation, setLoadingEvaluation] = useState(false);
+  const [loadingAuthenticity, setLoadingAuthenticity] = useState(false);
+  const [loadingReport, setLoadingReport] = useState(false);
+  const [loadingRetrain, setLoadingRetrain] = useState(false);
+  const [loadingNudges, setLoadingNudges] = useState(false);
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const response = await fetch('/api/notifications');
+      const data = await response.json();
+      if (response.ok) setNotifications(Array.isArray(data.items) ? data.items : []);
+    } catch {
+      setNotifications([]);
+    }
+  }, []);
 
   useEffect(() => {
     fetch('/api/ai')
@@ -107,7 +181,8 @@ export default function AiPage() {
         if (data) setOverview(data);
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load AI module'));
-  }, [router]);
+    loadNotifications();
+  }, [loadNotifications, router]);
 
   const askAssistant = async (prompt = query) => {
     setLoadingAssistant(true);
@@ -148,6 +223,99 @@ export default function AiPage() {
     }
   };
 
+  const checkAuthenticity = async () => {
+    setLoadingAuthenticity(true);
+    setError('');
+    try {
+      const response = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'authenticity', title, submission_text: submissionText, github_url: githubUrl }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Authenticity check failed');
+      setAuthenticity(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Authenticity check failed');
+    } finally {
+      setLoadingAuthenticity(false);
+    }
+  };
+
+  const generateReport = async () => {
+    setLoadingReport(true);
+    setError('');
+    try {
+      const response = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'report', report_type: 'Weekly executive', output_format: 'pdf' }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Report generation failed');
+      setReport(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Report generation failed');
+    } finally {
+      setLoadingReport(false);
+    }
+  };
+
+  const retrainModels = async () => {
+    setLoadingRetrain(true);
+    setError('');
+    try {
+      const response = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'retrain' }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Model retraining failed');
+      setRetrainResult(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Model retraining failed');
+    } finally {
+      setLoadingRetrain(false);
+    }
+  };
+
+  const runNudges = async () => {
+    setLoadingNudges(true);
+    setError('');
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ auto_send: false }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Nudge generation failed');
+      setNudgeResult(data);
+      await loadNotifications();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Nudge generation failed');
+    } finally {
+      setLoadingNudges(false);
+    }
+  };
+
+  const markReplied = async (notificationId: number) => {
+    setError('');
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'response', notification_id: notificationId, response_status: 'replied', notes: 'Response tracked from AI command center.' }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Response tracking failed');
+      await loadNotifications();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Response tracking failed');
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#0B1020] px-4 py-6 text-slate-200 sm:px-6">
       <div className="mx-auto max-w-7xl space-y-5">
@@ -160,6 +328,89 @@ export default function AiPage() {
         </section>
 
         {error && <section className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-100">{error}</section>}
+
+        <section className="grid gap-5 xl:grid-cols-3">
+          <Panel title="Live AI provider" eyebrow="OpenAI / Gemini">
+            <div className="rounded-lg border border-white/10 bg-[#0B1020] p-4">
+              <p className="text-2xl font-semibold text-white">{overview?.provider_status?.provider ?? 'local'}</p>
+              <p className="mt-2 text-sm text-slate-400">{overview?.provider_status?.live_enabled ? 'Live provider calls enabled' : 'Local fallback active'}</p>
+            </div>
+          </Panel>
+
+          <Panel title="ML model status" eyebrow="Scikit-learn">
+            <div className="space-y-3">
+              <div className="rounded-lg border border-white/10 bg-[#0B1020] p-4">
+                <p className="text-sm text-slate-400">Training rows</p>
+                <p className="mt-1 text-2xl font-semibold text-white">{overview?.model_status?.training_rows_available ?? 0}</p>
+              </div>
+              <button
+                onClick={retrainModels}
+                disabled={loadingRetrain}
+                className="h-10 rounded-lg bg-[#B91C1C] px-4 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loadingRetrain ? 'Retraining...' : 'Retrain models'}
+              </button>
+              {retrainResult && <p className="text-sm text-slate-400">{retrainResult.status === 'completed' ? `Trained ${retrainResult.training_rows} rows.` : retrainResult.message}</p>}
+            </div>
+          </Panel>
+
+          <Panel title="AI report export" eyebrow="PDF / HTML / Markdown">
+            <div className="space-y-3">
+              <button
+                onClick={generateReport}
+                disabled={loadingReport}
+                className="h-10 rounded-lg bg-[#B91C1C] px-4 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loadingReport ? 'Generating...' : 'Generate PDF report'}
+              </button>
+              {report && (
+                <div className="rounded-lg border border-white/10 bg-[#0B1020] p-3 text-sm text-slate-300">
+                  {report.output_format.toUpperCase()} ready at {report.file_url}
+                </div>
+              )}
+            </div>
+          </Panel>
+        </section>
+
+        <section className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
+          <Panel title="Auto nudges" eyebrow="WhatsApp / Email">
+            <div className="space-y-3">
+              <button
+                onClick={runNudges}
+                disabled={loadingNudges}
+                className="h-10 rounded-lg bg-[#B91C1C] px-4 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loadingNudges ? 'Scanning...' : 'Run missed-attendance and assignment nudges'}
+              </button>
+              {nudgeResult && (
+                <div className="rounded-lg border border-white/10 bg-[#0B1020] p-3 text-sm text-slate-300">
+                  {nudgeResult.detected_events} events, {nudgeResult.created_notifications} notifications, {nudgeResult.skipped_duplicates} duplicates skipped.
+                </div>
+              )}
+            </div>
+          </Panel>
+
+          <Panel title="Nudge response tracking" eyebrow="Latest queue">
+            <div className="grid gap-3">
+              {notifications.length === 0 && <p className="text-sm text-slate-500">No nudges queued yet.</p>}
+              {notifications.slice(0, 5).map((item) => (
+                <div key={item.id} className="grid gap-3 rounded-lg border border-white/10 bg-[#0B1020] p-4 md:grid-cols-[1fr_auto] md:items-center">
+                  <div>
+                    <p className="text-sm font-medium text-white">{item.payload.student_name ?? item.recipient_id}</p>
+                    <p className="mt-1 text-xs text-slate-500">{item.channel} to {item.recipient_type} - {item.status} - response {item.response_status}</p>
+                    <p className="mt-2 line-clamp-2 text-sm text-slate-400">{item.payload.message}</p>
+                  </div>
+                  <button
+                    onClick={() => markReplied(item.id)}
+                    className="h-9 rounded-lg border border-white/10 px-3 text-xs font-semibold text-slate-200 transition hover:border-[#B91C1C]"
+                  >
+                    Mark replied
+                  </button>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        </section>
 
         <section className="grid gap-5 xl:grid-cols-[1fr_0.8fr]">
           <Panel title="AI executive report" eyebrow="Auto generated">
@@ -298,12 +549,25 @@ export default function AiPage() {
                 placeholder="Paste student assignment text here..."
                 className="min-h-44 w-full rounded-lg border border-white/10 bg-[#0B1020] p-3 text-sm text-white outline-none focus:border-[#B91C1C]"
               />
+              <input
+                value={githubUrl}
+                onChange={(event) => setGithubUrl(event.target.value)}
+                placeholder="GitHub repository URL optional"
+                className="h-10 w-full rounded-lg border border-white/10 bg-[#0B1020] px-3 text-sm text-white outline-none focus:border-[#B91C1C]"
+              />
               <button
                 onClick={evaluateSubmission}
                 disabled={loadingEvaluation || !submissionText.trim()}
                 className="h-10 rounded-lg bg-[#B91C1C] px-4 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loadingEvaluation ? 'Evaluating...' : 'Evaluate submission'}
+              </button>
+              <button
+                onClick={checkAuthenticity}
+                disabled={loadingAuthenticity || !submissionText.trim()}
+                className="h-10 rounded-lg border border-white/10 px-4 text-sm font-semibold text-white transition hover:border-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loadingAuthenticity ? 'Checking...' : 'Check authenticity'}
               </button>
             </div>
           </Panel>
@@ -327,8 +591,52 @@ export default function AiPage() {
             )}
           </Panel>
         </section>
+
+        <section className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
+          <Panel title="Project authenticity" eyebrow="Similarity / AI risk / GitHub">
+            {!authenticity ? (
+              <p className="text-sm text-slate-500">Run an authenticity check from the assignment panel.</p>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-end justify-between rounded-lg border border-white/10 bg-[#0B1020] p-5">
+                  <div>
+                    <p className="text-4xl font-semibold text-white">{authenticity.originality_score}%</p>
+                    <p className="mt-1 text-sm text-slate-400">Originality score</p>
+                  </div>
+                  <Badge tone={authenticity.risk_level}>{authenticity.risk_level}</Badge>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <ScoreTile label="Similarity" value={authenticity.similarity_score} />
+                  <ScoreTile label="AI risk" value={authenticity.ai_generated_risk} />
+                  <ScoreTile label="Code quality" value={authenticity.code_quality_score} />
+                  <ScoreTile label="GitHub activity" value={authenticity.github_activity_score} />
+                </div>
+              </div>
+            )}
+          </Panel>
+
+          <Panel title="Authenticity findings" eyebrow="Mentor review">
+            {!authenticity ? (
+              <p className="text-sm text-slate-500">Findings and recommendations will appear here.</p>
+            ) : (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <ResultList title="Findings" items={authenticity.findings} />
+                <ResultList title="Recommendations" items={authenticity.recommendations} />
+              </div>
+            )}
+          </Panel>
+        </section>
       </div>
     </main>
+  );
+}
+
+function ScoreTile({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-[#0B1020] p-4">
+      <p className="text-xs uppercase tracking-widest text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-white">{value}%</p>
+    </div>
   );
 }
 

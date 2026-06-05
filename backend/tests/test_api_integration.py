@@ -1,6 +1,6 @@
 import unittest
 import tempfile
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -9,12 +9,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.api.v1 import attendance, auth, dashboard, intelligence, reports
+from app.api.v1 import attendance, auth, dashboard, intelligence, notifications, reports
 from app.core import config
 from app.core.security import hash_password
 from app.db.base import Base
 from app.db.session import get_db
-from app.models.operations import AiConversation, AiReport, AssignmentEvaluation, Role
+from app.models.operations import AiConversation, AiReport, Assignment, AssignmentAuthenticityCheck, AssignmentEvaluation, Batch, Notification, Role, Student, Submission
 from app.models.user import User
 from app.services.rate_limit import login_rate_limiter
 
@@ -34,6 +34,7 @@ class ApiIntegrationTests(unittest.TestCase):
         self.app.include_router(dashboard.router, prefix='/api/v1/dashboard')
         self.app.include_router(attendance.router, prefix='/api/v1/attendance')
         self.app.include_router(intelligence.router, prefix='/api/v1/intelligence')
+        self.app.include_router(notifications.router, prefix='/api/v1/notifications')
         self.app.include_router(reports.router, prefix='/api/v1/reports')
 
         def override_get_db():
@@ -138,6 +139,62 @@ class ApiIntegrationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()['summary']['full'], 1)
 
+    def test_notification_nudges_queue_and_track_responses(self):
+        token = self.login('admin@example.com')
+        headers = {'Authorization': f'Bearer {token}'}
+
+        with self.Session() as session:
+            batch = Batch(name='AIML June', domain='AIML', status='active', mentor_uid='mentor-1')
+            session.add(batch)
+            session.flush()
+            student = Student(
+                batch_id=batch.id,
+                registration_number='TFI-NUDGE-001',
+                full_name='Asha Rao',
+                email='asha@example.com',
+                phone='+919999999999',
+                domain='AIML',
+                metadata_json={'parent_email': 'parent@example.com'},
+            )
+            session.add(student)
+            session.flush()
+            assignment = Assignment(
+                batch_id=batch.id,
+                title='Python recovery task',
+                assignment_type='programming',
+                due_at=datetime.now(timezone.utc) - timedelta(days=1),
+                max_score=100,
+            )
+            session.add(assignment)
+            session.flush()
+            session.add(Submission(assignment_id=assignment.id, student_id=student.id, status='missing', is_late=True))
+            session.commit()
+
+        run_response = self.client.post('/api/v1/notifications/nudges/run', json={'auto_send': False}, headers=headers)
+        self.assertEqual(run_response.status_code, 200, run_response.text)
+        payload = run_response.json()
+        self.assertEqual(payload['status'], 'completed')
+        self.assertGreaterEqual(payload['created_notifications'], 1)
+
+        list_response = self.client.get('/api/v1/notifications', headers=headers)
+        self.assertEqual(list_response.status_code, 200, list_response.text)
+        notification_id = list_response.json()['items'][0]['id']
+
+        track_response = self.client.post(
+            f'/api/v1/notifications/{notification_id}/response',
+            json={'response_status': 'replied', 'notes': 'Student confirmed submission by evening.'},
+            headers=headers,
+        )
+        self.assertEqual(track_response.status_code, 200, track_response.text)
+        self.assertEqual(track_response.json()['response_status'], 'replied')
+
+        duplicate_response = self.client.post('/api/v1/notifications/nudges/run', json={'auto_send': False}, headers=headers)
+        self.assertEqual(duplicate_response.status_code, 200, duplicate_response.text)
+        self.assertEqual(duplicate_response.json()['created_notifications'], 0)
+
+        with self.Session() as session:
+            self.assertGreaterEqual(session.query(Notification).count(), 1)
+
     def test_permission_failures_are_enforced(self):
         mentor_token = self.login('mentor@example.com')
         response = self.client.post(
@@ -175,6 +232,15 @@ class ApiIntegrationTests(unittest.TestCase):
             },
             headers=headers,
         )
+        authenticity_check = self.client.post(
+            '/api/v1/intelligence/ai/authenticity-check',
+            json={
+                'title': 'API Reflection',
+                'submission_text': 'I built an API route with database validation, tests, error handling, and React integration. ' * 10,
+                'github_url': 'https://github.com/example/tfi-project',
+            },
+            headers=headers,
+        )
 
         self.assertEqual(students.status_code, 200, students.text)
         self.assertEqual(student_page.status_code, 200, student_page.text)
@@ -189,6 +255,7 @@ class ApiIntegrationTests(unittest.TestCase):
         self.assertEqual(mentor_chat.status_code, 200, mentor_chat.text)
         self.assertEqual(ai_report.status_code, 200, ai_report.text)
         self.assertEqual(assignment_eval.status_code, 200, assignment_eval.text)
+        self.assertEqual(authenticity_check.status_code, 200, authenticity_check.text)
         self.assertIsInstance(students.json(), list)
         self.assertIn('has_more', student_page.json())
         self.assertIn('insights', insights.json())
@@ -205,10 +272,13 @@ class ApiIntegrationTests(unittest.TestCase):
         self.assertEqual(ai_report.json()['status'], 'completed')
         self.assertTrue(Path(ai_report.json()['file_url']).exists())
         self.assertIn('score', assignment_eval.json())
+        self.assertIn('originality_score', authenticity_check.json())
+        self.assertIn('github_evidence', authenticity_check.json())
         with self.Session() as session:
             self.assertEqual(session.query(AiConversation).count(), 2)
             self.assertEqual(session.query(AiReport).count(), 1)
             self.assertEqual(session.query(AssignmentEvaluation).count(), 1)
+            self.assertEqual(session.query(AssignmentAuthenticityCheck).count(), 1)
 
     def test_login_rate_limit_blocks_repeated_failures(self):
         original_limit = config.settings.login_rate_limit_attempts

@@ -88,6 +88,7 @@ class Student(Base):
     performance_predictions = relationship('PerformancePrediction', back_populates='student')
     risk_predictions = relationship('RiskPrediction', back_populates='student')
     assignment_evaluations = relationship('AssignmentEvaluation', back_populates='student')
+    authenticity_checks = relationship('AssignmentAuthenticityCheck', back_populates='student')
 
 
 class AttendanceSession(Base):
@@ -231,6 +232,9 @@ class Notification(Base):
     template = Column(String, nullable=False)
     status = Column(String, nullable=False, default='queued')
     payload = Column(JSON, nullable=False, default=dict)
+    response_status = Column(String, nullable=False, default='pending', index=True)
+    response_payload = Column(JSON, nullable=False, default=dict)
+    responded_at = Column(DateTime(timezone=True), nullable=True)
     sent_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -369,3 +373,29 @@ class AssignmentEvaluation(Base):
 
     submission = relationship('Submission', back_populates='assignment_evaluations')
     student = relationship('Student', back_populates='assignment_evaluations')
+
+
+class AssignmentAuthenticityCheck(Base):
+    __tablename__ = 'assignment_authenticity_checks'
+
+    id = Column(Integer, primary_key=True)
+    assignment_id = Column(Integer, ForeignKey('assignments.id', ondelete='SET NULL'), nullable=True, index=True)
+    submission_id = Column(Integer, ForeignKey('submissions.id', ondelete='SET NULL'), nullable=True, index=True)
+    student_id = Column(Integer, ForeignKey('students.id', ondelete='CASCADE'), nullable=True, index=True)
+    title = Column(String, nullable=False)
+    content_hash = Column(String, nullable=False, index=True)
+    similarity_score = Column(Float, nullable=False)
+    ai_generated_risk = Column(Float, nullable=False)
+    code_quality_score = Column(Float, nullable=False)
+    github_activity_score = Column(Float, nullable=False)
+    originality_score = Column(Float, nullable=False, index=True)
+    risk_level = Column(String, nullable=False, index=True)
+    matched_submission_id = Column(Integer, nullable=True)
+    fingerprint = Column(JSON, nullable=False, default=list)
+    github_evidence = Column(JSON, nullable=False, default=dict)
+    findings = Column(JSON, nullable=False, default=list)
+    recommendations = Column(JSON, nullable=False, default=list)
+    model_version = Column(String, nullable=False, default='authenticity-v1')
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+
+    student = relationship('Student', back_populates='authenticity_checks')

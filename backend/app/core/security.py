@@ -20,6 +20,8 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         'reports:read',
         'reports:generate',
         'intelligence:read',
+        'notifications:read',
+        'notifications:send',
     },
     'Host': {
         'dashboard:read',
@@ -27,12 +29,16 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         'attendance:read',
         'reports:read',
         'intelligence:read',
+        'notifications:read',
+        'notifications:send',
     },
     'Mentor': {
         'dashboard:read',
         'assignments:read',
         'reports:read',
         'intelligence:read',
+        'notifications:read',
+        'notifications:send',
     },
     'Admin': {
         'dashboard:read',
@@ -41,6 +47,8 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         'reports:read',
         'reports:generate',
         'intelligence:read',
+        'notifications:read',
+        'notifications:send',
         'system:admin',
     },
 }

@@ -13,13 +13,18 @@ export async function POST(request: NextRequest) {
     ? { id_token: body.idToken }
     : { email: body.email, password: body.password };
 
-  const response = await fetch(`${backendUrl}/auth/${endpoint}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${backendUrl}/auth/${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    return NextResponse.json({ detail: `Backend auth service is unavailable at ${backendUrl}` }, { status: 502 });
+  }
 
-  const data = await response.json();
+  const data = await safeJson(response);
   const nextResponse = NextResponse.json(data, { status: response.status });
   if (response.ok && data.access_token) {
     nextResponse.cookies.set(cookieName, data.access_token, {
@@ -49,13 +54,18 @@ export async function PATCH(request: NextRequest) {
   }
 
   const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
-  const response = await fetch(`${backendUrl}/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${backendUrl}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+  } catch {
+    return NextResponse.json({ detail: `Backend auth service is unavailable at ${backendUrl}` }, { status: 502 });
+  }
 
-  const data = await response.json();
+  const data = await safeJson(response);
   const nextResponse = NextResponse.json(data, { status: response.status });
   if (response.ok && data.access_token) {
     nextResponse.cookies.set(cookieName, data.access_token, {
@@ -83,4 +93,14 @@ export async function DELETE() {
   response.cookies.set(cookieName, '', { path: '/', maxAge: 0 });
   response.cookies.set(refreshCookieName, '', { path: '/', maxAge: 0 });
   return response;
+}
+
+async function safeJson(response: Response) {
+  const text = await response.text();
+  if (!text) return { detail: response.statusText || 'Empty backend response' };
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { detail: text };
+  }
 }

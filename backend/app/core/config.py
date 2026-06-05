@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     resend_from_email: str = ''
     whatsapp_api_token: str = ''
     whatsapp_phone_number_id: str = ''
+    notification_auto_send: bool = False
+    nudge_missed_attendance_threshold: float = 55.0
+    nudge_critical_missing_assignments: int = 2
+    github_api_token: str = ''
+    github_request_timeout_seconds: int = 10
     ai_live_enabled: bool = False
     ai_provider: str = 'local'
     openai_api_key: str = ''

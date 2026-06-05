@@ -1,5 +1,6 @@
 from app.models.operations import (
     Assignment,
+    AssignmentAuthenticityCheck,
     AssignmentEvaluation,
     AttendanceRecord,
     AttendancePrediction,
@@ -26,6 +27,7 @@ from app.models.user import User
 
 __all__ = [
     'Assignment',
+    'AssignmentAuthenticityCheck',
     'AssignmentEvaluation',
     'AttendanceRecord',
     'AttendancePrediction',

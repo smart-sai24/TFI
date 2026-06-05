@@ -5,6 +5,7 @@ offline deployments work even when external LLM providers are not configured.
 """
 
 from app.ai.assignment_evaluator import evaluate_assignment_submission
+from app.ai.authenticity import run_authenticity_check
 from app.ai.attendance_prediction import attendance_drop_predictions
 from app.ai.insights_engine import ai_module_overview, executive_ai_report
 from app.ai.mentor_assistant import answer_mentor_query
@@ -24,4 +25,5 @@ __all__ = [
     'performance_forecasts',
     'retrain_models',
     'risk_analysis',
+    'run_authenticity_check',
 ]

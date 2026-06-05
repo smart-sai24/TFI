@@ -5,7 +5,7 @@ from time import perf_counter
 
 from starlette.requests import Request
 
-from app.api.v1 import attendance, auth, dashboard, intelligence, reports
+from app.api.v1 import attendance, auth, dashboard, intelligence, notifications, reports
 from app.core.config import settings
 from app.db.session import SessionLocal
 from app.services.bootstrap import bootstrap_initial_admin, bootstrap_local_role_users, bootstrap_rbac
@@ -50,6 +50,7 @@ app.include_router(dashboard.router, prefix='/api/v1/dashboard', tags=['dashboar
 app.include_router(attendance.router, prefix='/api/v1/attendance', tags=['attendance'])
 app.include_router(reports.router, prefix='/api/v1/reports', tags=['reports'])
 app.include_router(intelligence.router, prefix='/api/v1/intelligence', tags=['intelligence'])
+app.include_router(notifications.router, prefix='/api/v1/notifications', tags=['notifications'])
 
 @app.on_event('startup')
 def startup_bootstrap():

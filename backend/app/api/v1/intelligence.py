@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUser, require_permission
 from app.ai.assignment_evaluator import evaluate_assignment_submission
+from app.ai.authenticity import run_authenticity_check
 from app.ai.attendance_prediction import attendance_drop_predictions
 from app.ai.insights_engine import ai_module_overview, executive_ai_report
 from app.ai.mentor_assistant import answer_mentor_query
@@ -32,6 +33,15 @@ class AssignmentEvaluationRequest(BaseModel):
     title: str
     submission_text: str
     max_score: int = 100
+    submission_id: int | None = None
+    student_id: int | None = None
+
+
+class AuthenticityCheckRequest(BaseModel):
+    title: str
+    submission_text: str
+    github_url: str | None = None
+    assignment_id: int | None = None
     submission_id: int | None = None
     student_id: int | None = None
 
@@ -220,3 +230,20 @@ def evaluate_assignment(
     )
     db.commit()
     return result
+
+
+@router.post('/ai/authenticity-check')
+def check_assignment_authenticity(
+    request: AuthenticityCheckRequest,
+    user: CurrentUser = require_permission('intelligence:read'),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    return run_authenticity_check(
+        db,
+        request.title,
+        request.submission_text,
+        request.github_url,
+        request.assignment_id,
+        request.submission_id,
+        request.student_id,
+    )

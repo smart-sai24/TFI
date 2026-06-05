@@ -1,547 +1,425 @@
 # TFI Command Center 2.0
 
-### AI-Powered Internship Operations & Intelligence Platform
+AI-powered internship operations, analytics, and student success intelligence platform for Techno Future India.
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black)]()
-[![React](https://img.shields.io/badge/React-19-blue)]()
-[![FastAPI](https://img.shields.io/badge/FastAPI-Latest-green)]()
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue)]()
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)]()
-[![License](https://img.shields.io/badge/License-MIT-green)]()
+## Overview
 
----
+TFI Command Center 2.0 is an enterprise-style platform for managing internship programs end to end. It centralizes attendance imports, assignment tracking, role-based dashboards, reports, AI insights, student risk detection, mentor workflows, notification nudges, and authenticity checks.
 
-## Executive Summary
+The platform is designed for four operating roles:
 
-TFI Command Center 2.0 is an enterprise-grade Internship Operations & Intelligence Platform developed by Techno Future India (TFI) to automate and optimize internship management processes.
+- **Director**: executive analytics, forecasts, risk heatmaps, reports, and program health.
+- **Host**: attendance imports, live operations, session quality, late joiners, and early leavers.
+- **Mentor**: coaching queue, assignment review, risk students, nudges, AI assistant, and authenticity checks.
+- **Admin**: platform governance, users, RBAC, system health, audit, and AI operations.
 
-The platform serves as a centralized command center for Directors, Hosts, Mentors, and Administrators, enabling real-time monitoring of attendance, assignment submissions, student engagement, performance analytics, certificate eligibility, and operational intelligence.
+## Current Verification Status
 
-Instead of relying on spreadsheets, manual attendance sheets, and disconnected communication channels, the platform provides a single source of truth for internship operations.
+Latest local verification:
 
-The objective is to improve operational efficiency, enhance mentor productivity, increase student accountability, and provide leadership teams with actionable insights through advanced analytics and automation.
-
----
-
-# Problem Statement
-
-Managing large internship programs presents several operational challenges:
-
-### Attendance Management
-
-* Manual attendance collection
-* Inaccurate participation tracking
-* Difficult verification processes
-* Time-consuming report generation
-
-### Assignment Monitoring
-
-* Manual review of submissions
-* No centralized tracking system
-* Difficulty identifying pending assignments
-* Poor visibility into student progress
-
-### Performance Evaluation
-
-* Lack of standardized scoring
-* No centralized analytics
-* Limited student performance insights
-* Difficult certificate eligibility calculations
-
-### Administrative Burden
-
-* Multiple spreadsheets
-* Duplicate records
-* Human errors
-* Inefficient reporting workflows
-
-TFI Command Center 2.0 addresses these challenges through automation, analytics, and centralized management.
-
----
-
-# Product Vision
-
-### Transform Internship Operations into an Intelligent Data-Driven Ecosystem
-
-TFI Command Center 2.0 combines:
-
-* Attendance Intelligence
-* Assignment Intelligence
-* Student Success Intelligence
-* Performance Analytics
-* Risk Detection
-* Certificate Automation
-* AI Insights
-
-into a unified platform.
-
-The goal is to provide complete operational visibility while significantly reducing manual workload.
-
----
-
-# Core Platform Modules
-
-## Executive Analytics Center (Director Dashboard)
-
-Designed for strategic decision-makers.
-
-### Features
-
-* Internship Health Score
-* Batch Performance Overview
-* Certificate Forecasting
-* Risk Heatmaps
-* Weekly Executive Reports
-* Performance Trends
-* Attendance Trends
-* AI-Generated Insights
-
-### Business Value
-
-Allows leadership teams to quickly assess the overall health of internship programs.
-
----
-
-## Operations Command Center (Host Dashboard)
-
-Designed for daily internship operations.
-
-### Features
-
-* Live Session Monitoring
-* Attendance Tracking
-* Session Timeline
-* Attendance Import Wizard
-* Active Session Statistics
-* Late Joiner Detection
-* Early Leave Detection
-* Session Health Monitoring
-
-### Business Value
-
-Provides real-time visibility into ongoing internship activities.
-
----
-
-## Student Success Hub (Mentor Dashboard)
-
-Designed for mentoring and student management.
-
-### Features
-
-* Assigned Student List
-* Assignment Review Queue
-* Missing Submission Tracker
-* Student Performance Analytics
-* AI Recommendations
-* Risk Student Monitoring
-* Coaching Suggestions
-
-### Business Value
-
-Helps mentors focus on students requiring attention.
-
----
-
-## System Control Center (Admin Dashboard)
-
-Designed for platform administration.
-
-### Features
-
-* User Management
-* Role Management
-* Permission Management
-* Audit Logs
-* API Monitoring
-* Security Monitoring
-* System Health Dashboard
-
-### Business Value
-
-Ensures platform reliability and security.
-
----
-
-# Attendance Intelligence Engine
-
-Automatically processes attendance data from:
-
-* Zoom Reports
-* Google Meet Exports
-* CSV Files
-* Excel Files
-
-Tracks:
-
-* Join Time
-* Leave Time
-* Attendance Duration
-* Attendance Percentage
-* Late Joining
-* Early Leaving
-* Engagement Metrics
-
----
-
-# Assignment Intelligence Engine
-
-Track and manage:
-
-* Assignment Creation
-* Submission Status
-* Missing Submissions
-* Late Submissions
-* Resubmissions
-* Assignment Scores
-
-Generate:
-
-* Assignment Completion Reports
-* Submission Analytics
-* Performance Insights
-
----
-
-# Student Performance Engine
-
-Calculate:
-
-Overall Score =
-40% Attendance +
-40% Assignments +
-20% Participation
-
-Performance Categories:
-
-* Outstanding
-* Excellent
-* Good
-* Average
-* Needs Improvement
-
----
-
-# AI Risk Detection
-
-Automatically identifies:
-
-### High Risk
-
-* Attendance below threshold
-* Multiple missing assignments
-
-### Medium Risk
-
-* Low participation
-* Late submissions
-
-### Low Risk
-
-* Consistent performance
-
-Provides proactive intervention opportunities.
-
----
-
-# Certificate Eligibility Engine
-
-Automatically determines eligibility based on:
-
-* Attendance Percentage
-* Assignment Completion Rate
-* Internship Participation
-* Program Requirements
-
-Outputs:
-
-* Eligible
-* Warning
-* Not Eligible
-
----
-
-# Reporting Center
-
-Generate:
-
-* Daily Reports
-* Weekly Reports
-* Monthly Reports
-* Internship Completion Reports
-
-Export Formats:
-
-* Excel
-* CSV
-* PDF
-
----
-
-# User Roles
-
-## Director
-
-### Responsibilities
-
-* Strategic oversight
-* Program monitoring
-* Decision making
-
-### Dashboard Features
-
-* Executive Analytics Center
-* Risk Monitoring
-* Performance Forecasting
-* Batch Analytics
-
----
-
-## Host
-
-### Responsibilities
-
-* Session operations
-* Attendance monitoring
-
-### Dashboard Features
-
-* Live Attendance
-* Session Analytics
-* Participation Monitoring
-
----
-
-## Mentor
-
-### Responsibilities
-
-* Student guidance
-* Assignment review
-
-### Dashboard Features
-
-* Student Success Hub
-* Assignment Queue
-* Risk Detection
-
----
-
-## Admin
-
-### Responsibilities
-
-* Platform administration
-* Security management
-
-### Dashboard Features
-
-* User Management
-* System Monitoring
-* Audit Logs
-
----
-
-# Technology Stack
-
-| Layer            | Technology     | Purpose                      |
-| ---------------- | -------------- | ---------------------------- |
-| Frontend         | Next.js 15     | Full-stack React framework   |
-| UI               | React 19       | Interactive user interfaces  |
-| Language         | TypeScript     | Type safety                  |
-| Styling          | Tailwind CSS   | Utility-first styling        |
-| Components       | ShadCN UI      | Enterprise UI system         |
-| Animations       | Framer Motion  | Smooth transitions           |
-| Tables           | TanStack Table | Advanced data tables         |
-| Charts           | Recharts       | Analytics dashboards         |
-| State            | Zustand        | Lightweight state management |
-| API              | React Query    | Server state management      |
-| Backend          | FastAPI        | High-performance APIs        |
-| ORM              | SQLAlchemy     | Database management          |
-| Migrations       | Alembic        | Schema migrations            |
-| Validation       | Pydantic       | Data validation              |
-| Database         | PostgreSQL     | Relational database          |
-| Authentication   | Firebase Auth  | Secure authentication        |
-| Analytics        | Pandas         | Data processing              |
-| Analytics        | NumPy          | Numerical operations         |
-| Reporting        | OpenPyXL       | Excel exports                |
-| Reporting        | ReportLab      | PDF generation               |
-| Storage          | Cloudinary     | File storage                 |
-| Notifications    | WhatsApp API   | Messaging                    |
-| Notifications    | Resend         | Email delivery               |
-| Deployment       | Vercel         | Frontend hosting             |
-| Deployment       | Render         | Backend hosting              |
-| Database Hosting | Supabase       | Managed PostgreSQL           |
-| Monitoring       | Sentry         | Error tracking               |
-| Monitoring       | PostHog        | Product analytics            |
-| Monitoring       | Uptime Kuma    | Uptime monitoring            |
-
----
-
-# High-Level Architecture
-
-```mermaid
-flowchart LR
-
-Users --> Frontend
-
-Frontend --> API
-
-API --> PostgreSQL
-
-API --> Analytics
-
-Analytics --> Reports
-
-Reports --> PDF
-
-Reports --> Excel
-
-API --> Notifications
-
-Notifications --> WhatsApp
-
-Notifications --> Email
+```text
+Backend tests: 29 passed
+Frontend lint: passed
+Frontend production build: passed
 ```
 
----
+Live OpenAI/Gemini, WhatsApp, Email, and GitHub checks require provider credentials in environment variables.
 
-# Project Structure
+## Key Features
 
-```bash
-TFI-Command-Center/
+### Core Operations
 
+- Role-based dashboards for Director, Host, Mentor, and Admin.
+- Attendance import from CSV/XLS/XLSX.
+- Zoom/Meet-style attendance column normalization.
+- Student, batch, attendance, assignment, submission, risk, certificate, notification, report, audit, and AI history data models.
+- Certificate eligibility forecasting.
+- Operational reports and audit trails.
+
+### AI Intelligence Layer
+
+- Attendance drop prediction.
+- 7-day and 30-day attendance forecast.
+- Performance forecasting.
+- Certificate eligibility probability.
+- Risk detection with reasoning.
+- Executive AI insights and reports.
+- Mentor AI assistant backed by real platform data.
+- Assignment evaluation.
+- Project plagiarism and authenticity check.
+- Trainable Scikit-Learn models.
+- Model retraining endpoint and UI control.
+- Live OpenAI/Gemini provider mode with local fallback.
+
+### Notifications and Nudges
+
+- Auto-detect missed attendance.
+- Auto-detect overdue missing assignments.
+- Generate personalized student reminders.
+- Escalate critical cases to mentor/parent contacts when available.
+- Queue or send Email/WhatsApp nudges.
+- Prevent duplicate nudges.
+- Track response status.
+
+### Authenticity and Plagiarism
+
+- Similarity check against prior submissions using hashed fingerprints.
+- AI-generated content risk scoring.
+- Code-quality evidence score.
+- GitHub repository activity check.
+- Originality score.
+- Mentor findings and review recommendations.
+- Persistent authenticity audit records.
+
+### Reporting
+
+- AI report generation.
+- Markdown export.
+- HTML export.
+- PDF export with ReportLab.
+- Report history persistence.
+
+## Tech Stack
+
+| Area | Technology |
+|---|---|
+| Frontend | Next.js 15, React 19, TypeScript |
+| Styling | Tailwind CSS |
+| Charts | Recharts |
+| State | Zustand |
+| Backend | FastAPI |
+| ORM | SQLAlchemy |
+| Migrations | Alembic |
+| Database | PostgreSQL in production, SQLite for local/test |
+| Auth | JWT, Firebase-ready session support |
+| ML/Data | Pandas, NumPy, Scikit-Learn |
+| Reports | ReportLab, HTML, Markdown |
+| Notifications | Resend Email, WhatsApp Cloud API |
+| AI Providers | OpenAI, Google Gemini, local fallback |
+
+## Repository Structure
+
+```text
+.
+├── backend/
+│   ├── alembic/
+│   │   └── versions/
+│   ├── app/
+│   │   ├── ai/
+│   │   ├── api/
+│   │   │   └── v1/
+│   │   ├── core/
+│   │   ├── db/
+│   │   ├── models/
+│   │   ├── schemas/
+│   │   └── services/
+│   ├── tests/
+│   └── requirements.txt
 ├── frontend/
 │   ├── app/
 │   ├── components/
-│   ├── hooks/
-│   ├── services/
-│   └── store/
-│
-├── backend/
-│   ├── app/
-│   ├── api/
-│   ├── models/
-│   ├── schemas/
-│   ├── services/
-│   └── core/
-│
-├── database/
-│
+│   ├── lib/
+│   ├── store/
+│   ├── styles/
+│   ├── types/
+│   └── package.json
 ├── docs/
-│
-├── scripts/
-│
-├── .github/
-│   └── workflows/
-│
 ├── docker-compose.yml
-├── README.md
-└── LICENSE
+└── README.md
 ```
 
----
+## Prerequisites
 
-# Security Features
+- Python 3.10+
+- Node.js 18+
+- Yarn 1.x
+- Docker Desktop, if using local PostgreSQL
+- Optional provider accounts:
+  - OpenAI or Google Gemini
+  - Resend
+  - WhatsApp Cloud API
+  - GitHub token
 
-* Firebase Authentication
-* JWT Authentication
-* Role-Based Access Control (RBAC)
-* API Rate Limiting
-* Audit Logging
-* Input Validation
-* Secure Environment Variables
-* SQL Injection Protection
-* HTTPS Enforcement
+## Backend Setup
 
----
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+alembic upgrade head
+uvicorn app.main:app --reload --port 8000
+```
 
-# Future AI Roadmap
+For PowerShell, activate the virtual environment with:
 
-### AI Attendance Prediction
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
 
-Predict attendance drops before they occur.
+## Frontend Setup
 
-### AI Performance Forecasting
+```bash
+cd frontend
+yarn install
+yarn dev
+```
 
-Estimate final internship outcomes.
+Default frontend URL:
 
-### AI Mentor Assistant
+```text
+http://localhost:3000
+```
 
-Ask questions such as:
+Default backend URL:
 
-> Show students with attendance below 70%.
+```text
+http://127.0.0.1:8000/api/v1
+```
 
-### AI Assignment Evaluation
+## Local Demo Users
 
-Automatically review and score submissions.
+When `ENVIRONMENT=local`, the backend seeds local demo users.
 
-### AI Report Generation
+| Role | Email | Password |
+|---|---|---|
+| Director | `director@techofutureindia.com` | `TfiDemo@2026!` |
+| Host | `host@techofutureindia.com` | `TfiDemo@2026!` |
+| Mentor | `mentor@techofutureindia.com` | `TfiDemo@2026!` |
+| Admin | `admin-demo@techofutureindia.com` | `TfiDemo@2026!` |
 
-Generate executive reports automatically.
+## Environment Variables
 
----
+### Backend
 
-# Deployment
+Create `backend/.env`:
 
-## Frontend
+```env
+ENVIRONMENT=local
+DATABASE_URL=sqlite:///./tfi_local.db
+SECRET_KEY=change-me-before-production
+FRONTEND_ORIGINS=http://localhost:3000
+ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,backend
 
-* Vercel
+INITIAL_ADMIN_EMAIL=
+INITIAL_ADMIN_PASSWORD=
+INITIAL_ADMIN_NAME=TFI Administrator
+INITIAL_ADMIN_ROLE=Admin
 
-## Backend
+AI_LIVE_ENABLED=false
+AI_PROVIDER=local
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-5.5
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-1.5-pro
 
-* Render
+NOTIFICATION_AUTO_SEND=false
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
+WHATSAPP_API_TOKEN=
+WHATSAPP_PHONE_NUMBER_ID=
 
-## Database
+GITHUB_API_TOKEN=
+```
 
-* Supabase PostgreSQL
+### Frontend
 
-## Monitoring
+Create `frontend/.env`:
 
-* Sentry
-* PostHog
-* Uptime Kuma
+```env
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000/api/v1
 
----
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
+```
 
-# Expected Benefits
+## Database Migrations
 
-* 90% reduction in manual operations
-* Centralized internship management
-* Faster report generation
-* Improved mentor productivity
-* Better student engagement
-* Automated eligibility calculations
-* Real-time analytics and insights
+Run migrations after pulling new backend changes:
 
----
+```bash
+cd backend
+alembic upgrade head
+```
 
-# About Techno Future India
+Create a new migration manually only when schema changes are added:
 
-### Mission
+```bash
+alembic revision -m "description"
+```
 
-To empower students through industry-focused learning, innovation, and technology-driven education.
+## API Overview
 
-### Vision
+Base URL:
 
-To build the most advanced internship and skill-development ecosystem that bridges the gap between academia and industry.
+```text
+/api/v1
+```
 
-### Core Values
+Important route groups:
 
-* Innovation
-* Excellence
-* Integrity
-* Continuous Learning
-* Technology Leadership
+```text
+/auth
+/dashboard
+/attendance
+/reports
+/intelligence
+/notifications
+```
 
----
+AI routes:
 
-# License
+```text
+GET  /intelligence/ai/overview
+GET  /intelligence/ai/attendance-prediction
+GET  /intelligence/ai/performance-forecast
+GET  /intelligence/ai/risk-analysis
+GET  /intelligence/ai/executive-report
+GET  /intelligence/ai/model-status
+POST /intelligence/ai/model-retraining
+POST /intelligence/ai/mentor-chat
+POST /intelligence/ai/report-generation
+POST /intelligence/ai/assignment-evaluation
+POST /intelligence/ai/authenticity-check
+```
+
+Notification routes:
+
+```text
+GET  /notifications
+POST /notifications/nudges/run
+POST /notifications/{notification_id}/response
+```
+
+## Testing
+
+Backend:
+
+```bash
+cd backend
+pytest
+```
+
+Frontend lint:
+
+```bash
+cd frontend
+yarn lint
+```
+
+Frontend production build:
+
+```bash
+cd frontend
+yarn build
+```
+
+## Deployment Notes
+
+### Frontend
+
+Recommended target:
+
+- Vercel
+
+Required frontend environment:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=https://your-backend-domain/api/v1
+```
+
+### Backend
+
+Recommended targets:
+
+- Render
+- Railway
+- Fly.io
+- AWS/GCP/Azure container runtime
+
+Production requirements:
+
+- PostgreSQL database
+- Strong `SECRET_KEY`
+- `ENVIRONMENT=production`
+- `alembic upgrade head`
+- Proper `ALLOWED_HOSTS`
+- Proper `FRONTEND_ORIGINS`
+- Provider credentials if live integrations are needed
+
+## Production Checklist
+
+- [ ] Use PostgreSQL, not SQLite.
+- [ ] Run `alembic upgrade head`.
+- [ ] Set a strong production `SECRET_KEY`.
+- [ ] Configure `ALLOWED_HOSTS`.
+- [ ] Configure `FRONTEND_ORIGINS`.
+- [ ] Configure initial admin or provision users through the database.
+- [ ] Add OpenAI/Gemini keys if live AI is required.
+- [ ] Add Resend/WhatsApp credentials if live nudges are required.
+- [ ] Add GitHub token for higher-rate GitHub activity checks.
+- [ ] Move report/model artifacts to durable object storage for cloud production.
+- [ ] Add monitoring and error tracking.
+- [ ] Add end-to-end browser tests before large-scale rollout.
+
+## Operational Modes
+
+### Safe Local Mode
+
+Default behavior:
+
+- Local deterministic AI.
+- Notifications queued, not sent.
+- GitHub checks run without token when possible.
+- Demo users seeded in local environment.
+
+### Live Enterprise Mode
+
+Enable with:
+
+```env
+AI_LIVE_ENABLED=true
+AI_PROVIDER=openai
+OPENAI_API_KEY=your_key
+NOTIFICATION_AUTO_SEND=true
+RESEND_API_KEY=your_key
+WHATSAPP_API_TOKEN=your_key
+```
+
+## Known Production Gaps
+
+The project is locally verified, but a full production rollout should still include:
+
+- End-to-end Playwright tests.
+- Formal backend coverage reporting with `pytest-cov`.
+- Background worker for heavy report generation, notification sending, and model retraining.
+- Durable storage for generated report/model artifacts.
+- Real APM/monitoring.
+- Large-cohort load testing.
+- Admin user-management UI.
+
+## Security
+
+Implemented:
+
+- JWT authentication.
+- Firebase-ready session endpoint.
+- Role-based access control.
+- Password hashing with PBKDF2-SHA256.
+- Login rate limiting.
+- Trusted host middleware.
+- Security headers.
+- Environment-based secret configuration.
+- Audit logs for operational actions.
+
+## License
 
 This project is licensed under the MIT License.
 
----
+## Maintainer
 
-### Developed by Techno Future India
-
-**TFI Command Center 2.0 – AI-Powered Internship Operations & Intelligence Platform**
+Developed for Techno Future India.
