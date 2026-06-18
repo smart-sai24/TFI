@@ -139,6 +139,45 @@ class ApiIntegrationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()['summary']['full'], 1)
 
+    def test_attendance_import_accepts_zoom_style_csv(self):
+        token = self.login('host@example.com')
+        csv_content = '\n'.join(
+            [
+                'Topic,ID,Host,Duration (minutes),Start time,End time,Participants',
+                'TFI Summer Internship 2026,81796405615,SIP_Tutor (technofuture.email@gmail.com),77,"06/16/2026 03:10:26 PM","06/16/2026 04:26:31 PM",67',
+                '',
+                'Name (original name),Email,Total duration (minutes),Guest',
+                '24JR1A05q6,,76,Yes',
+                '24JR1A05G0,,64,Yes',
+                'Neha Chowdary,,59,Yes',
+                '24JR1A05L3(Gorige MahaLakshmi),,77,Yes',
+                'SIP_Tutor,technofuture.email@gmail.com,15,No',
+            ]
+        )
+        response = self.client.post(
+            '/api/v1/attendance/import',
+            headers={'Authorization': f'Bearer {token}'},
+            data={
+                'batch_name': 'Batch A',
+                'domain': 'Python',
+                'session_title': 'Morning Lab',
+                'platform': 'Zoom',
+                'session_date': str(date(2026, 6, 5)),
+            },
+            files={'file': ('attendance.csv', csv_content, 'text/csv')},
+        )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        data = response.json()
+        self.assertEqual(len(data['records']), 5)
+        # Check that we parsed the names and reg numbers correctly
+        records_map = {r['student_name']: r for r in data['records']}
+        self.assertIn('24JR1A05Q6', records_map)
+        self.assertIn('24JR1A05G0', records_map)
+        self.assertIn('Gorige MahaLakshmi', records_map)
+        self.assertIn('Neha Chowdary', records_map)
+        self.assertIn('SIP_Tutor', records_map)
+
     def test_notification_nudges_queue_and_track_responses(self):
         token = self.login('admin@example.com')
         headers = {'Authorization': f'Bearer {token}'}
